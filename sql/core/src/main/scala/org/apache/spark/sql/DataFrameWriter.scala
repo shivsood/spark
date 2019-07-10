@@ -20,8 +20,8 @@ package org.apache.spark.sql
 import java.util.{Locale, Properties, UUID}
 
 import scala.collection.JavaConverters._
-
 import org.apache.spark.annotation.Stable
+import org.apache.spark.internal.Logging
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.{EliminateSubqueryAliases, UnresolvedRelation}
 import org.apache.spark.sql.catalyst.catalog._
@@ -44,7 +44,7 @@ import org.apache.spark.sql.util.CaseInsensitiveStringMap
  * @since 1.4.0
  */
 @Stable
-final class DataFrameWriter[T] private[sql](ds: Dataset[T]) {
+final class DataFrameWriter[T] private[sql](ds: Dataset[T]) extends Logging {
 
   private val df = ds.toDF()
 
@@ -245,6 +245,7 @@ final class DataFrameWriter[T] private[sql](ds: Dataset[T]) {
         "write files of Hive data source directly.")
     }
 
+    logInfo("***dsv2-flows*** save entered" + df.logicalPlan.verboseStringWithSuffix(5))
     assertNotBucketed("save")
 
     val session = df.sparkSession
@@ -267,11 +268,14 @@ final class DataFrameWriter[T] private[sql](ds: Dataset[T]) {
       val options = sessionOptions ++ extraOptions
       val dsOptions = new CaseInsensitiveStringMap(options.asJava)
 
+      logInfo("***dsv2-flows*** Print df.logicalPlan " + df.logicalPlan.schemaString)
+
       import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Implicits._
       provider.getTable(dsOptions) match {
         // TODO (SPARK-27815): To not break existing tests, here we treat file source as a special
         // case, and pass the save mode to file source directly. This hack should be removed.
         case table: FileTable =>
+
           val write = table.newWriteBuilder(dsOptions).asInstanceOf[FileWriteBuilder]
             .mode(modeForDSV1) // should not change default mode for file source.
             .withQueryId(UUID.randomUUID().toString)
