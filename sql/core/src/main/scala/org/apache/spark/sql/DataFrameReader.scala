@@ -204,6 +204,7 @@ class DataFrameReader private[sql](sparkSession: SparkSession) extends Logging {
         "read files of Hive data source directly.")
     }
 
+    logInfo("***dsv2-flows*** load")
     val useV1Sources =
       sparkSession.sessionState.conf.useV1SourceReaderList.toLowerCase(Locale.ROOT).split(",")
     val cls = DataSource.lookupDataSource(source, sparkSession.sessionState.conf)
@@ -213,6 +214,7 @@ class DataFrameReader private[sql](sparkSession: SparkSession) extends Logging {
     }
 
     if (!shouldUseV1Source && classOf[TableProvider].isAssignableFrom(cls)) {
+      logInfo("***dsv2-flows*** !shouldUseV1Source")
       val provider = cls.getConstructor().newInstance().asInstanceOf[TableProvider]
       val sessionOptions = DataSourceV2Utils.extractSessionConfigs(
         source = provider, conf = sparkSession.sessionState.conf)
@@ -232,6 +234,7 @@ class DataFrameReader private[sql](sparkSession: SparkSession) extends Logging {
       import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Implicits._
       table match {
         case _: SupportsRead if table.supports(BATCH_READ) =>
+          logInfo("***dsv2-flows*** load : supports read")
           Dataset.ofRows(sparkSession, DataSourceV2Relation.create(table, dsOptions))
 
         case _ => loadV1Source(paths: _*)
@@ -239,6 +242,7 @@ class DataFrameReader private[sql](sparkSession: SparkSession) extends Logging {
     } else {
       loadV1Source(paths: _*)
     }
+
   }
 
   private def loadV1Source(paths: String*) = {

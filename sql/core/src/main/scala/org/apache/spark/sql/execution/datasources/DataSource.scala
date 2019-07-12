@@ -402,6 +402,7 @@ case class DataSource(
           caseInsensitiveOptions)(sparkSession)
 
       case _ =>
+        logInfo("***dsv2-flows*** resolveRelation can't find datasource")
         throw new AnalysisException(
           s"$className is not a valid Spark SQL Data Source.")
     }

@@ -19,10 +19,11 @@ package org.apache.spark.sql.catalyst.analysis
 
 import java.util.Locale
 
+import org.apache.spark.internal.Logging
+
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
-
 import org.apache.spark.sql.AnalysisException
 import org.apache.spark.sql.catalog.v2.{CatalogNotFoundException, CatalogPlugin, LookupCatalog}
 import org.apache.spark.sql.catalyst._
@@ -98,7 +99,7 @@ class Analyzer(
     catalog: SessionCatalog,
     conf: SQLConf,
     maxIterations: Int)
-  extends RuleExecutor[LogicalPlan] with CheckAnalysis with LookupCatalog {
+  extends RuleExecutor[LogicalPlan] with CheckAnalysis with LookupCatalog with Logging{
 
   def this(catalog: SessionCatalog, conf: SQLConf) = {
     this(catalog, conf, conf.optimizerMaxIterations)
@@ -108,6 +109,7 @@ class Analyzer(
     throw new CatalogNotFoundException("No catalog lookup function")
 
   def executeAndCheck(plan: LogicalPlan, tracker: QueryPlanningTracker): LogicalPlan = {
+    logInfo("***dsv2-flows*** Analyzer::executeAndCheck")
     AnalysisHelper.markInAnalyzer {
       val analyzed = executeAndTrack(plan, tracker)
       try {
@@ -115,6 +117,7 @@ class Analyzer(
         analyzed
       } catch {
         case e: AnalysisException =>
+          logInfo("***dsv2-flows*** AnalysisException")
           val ae = new AnalysisException(e.message, e.line, e.startPosition, Option(analyzed))
           ae.setStackTrace(e.getStackTrace)
           throw ae
@@ -665,6 +668,7 @@ class Analyzer(
    */
   object ResolveTables extends Rule[LogicalPlan] {
     import org.apache.spark.sql.catalog.v2.utils.CatalogV2Util._
+
 
     def apply(plan: LogicalPlan): LogicalPlan = plan.resolveOperatorsUp {
       case u @ UnresolvedRelation(CatalogObjectIdentifier(Some(catalogPlugin), ident)) =>

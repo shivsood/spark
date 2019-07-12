@@ -114,6 +114,7 @@ object DataSourceV2Strategy extends Strategy with PredicateHelper {
 
   override def apply(plan: LogicalPlan): Seq[SparkPlan] = plan match {
     case PhysicalOperation(project, filters, relation: DataSourceV2Relation) =>
+      logInfo("PhysicalOperation")
       val scanBuilder = relation.newScanBuilder()
 
       val (withSubquery, withoutSubquery) = filters.partition(SubqueryExpression.hasSubquery)
@@ -158,17 +159,21 @@ object DataSourceV2Strategy extends Strategy with PredicateHelper {
           r.output, r.scan, continuousStream, r.startOffset.get)) :: Nil
 
     case WriteToDataSourceV2(writer, query) =>
+      logInfo("WriteToDataSourceV2")
       WriteToDataSourceV2Exec(writer, planLater(query)) :: Nil
 
     case CreateV2Table(catalog, ident, schema, parts, props, ifNotExists) =>
+      logInfo("CreateV2Table")
       CreateTableExec(catalog, ident, schema, parts, props, ifNotExists) :: Nil
 
     case CreateTableAsSelect(catalog, ident, parts, query, props, options, ifNotExists) =>
+      logInfo("CreateTableAsSelect")
       val writeOptions = new CaseInsensitiveStringMap(options.asJava)
       CreateTableAsSelectExec(
         catalog, ident, parts, planLater(query), props, writeOptions, ifNotExists) :: Nil
 
     case AppendData(r: DataSourceV2Relation, query, _) =>
+      logInfo("AppendData")
       AppendDataExec(r.table.asWritable, r.options, planLater(query)) :: Nil
 
     case OverwriteByExpression(r: DataSourceV2Relation, deleteExpr, query, _) =>

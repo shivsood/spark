@@ -51,10 +51,12 @@ case class DataSourceV2Relation(
   }
 
   def newScanBuilder(): ScanBuilder = {
+    logInfo("newScanBuilder")
     table.asReadable.newScanBuilder(options)
   }
 
   override def computeStats(): Statistics = {
+    logInfo("computeStats")
     val scan = newScanBuilder().build()
     scan match {
       case r: SupportsReportStatistics =>

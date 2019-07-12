@@ -19,7 +19,7 @@ import org.apache.spark.sql.util.CaseInsensitiveStringMap
 case class DBTable (sparkSession: SparkSession,
                      options: CaseInsensitiveStringMap,
                      userSpecifiedSchema: Option[StructType])
-  extends Table with SupportsWrite  with Logging{
+  extends Table with SupportsWrite with SupportsRead with Logging{
 
 
   override def name: String = {
@@ -27,7 +27,7 @@ case class DBTable (sparkSession: SparkSession,
 
     logInfo("***dsv2-flows*** name called")
 
-    "mytable"
+    "mysqltable"
   }
 
   def schema: StructType = {
@@ -48,10 +48,15 @@ case class DBTable (sparkSession: SparkSession,
     new JDBCWriteBuilder()
   }
 
+  override def newScanBuilder(options: CaseInsensitiveStringMap): ScanBuilder = {
+    logInfo("***dsv2-flows*** newScanBuilder called")
+    new JDBCScanBuilder()
+  }
+
 }
 
 object DBTable {
-  private val CAPABILITIES = Set(BATCH_WRITE, TRUNCATE).asJava
+  private val CAPABILITIES = Set(BATCH_WRITE, BATCH_READ, TRUNCATE).asJava
 }
 
 
